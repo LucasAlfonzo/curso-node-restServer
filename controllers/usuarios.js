@@ -1,39 +1,67 @@
 const { request, response} = require('express');
+const Usuario = require('../models/modeloUsuario');
+const bcryptjs = require('bcryptjs');
+// const { validarCampos } = require('../middlewares/validarCampos');
 
 
-const getUser = (req = request, res = response) => {
-    const { q , nombre , apikey } = req.query;
+const getUser = async(req = request, res = response) => {
+    // const { q , nombre , apikey } = req.query;
+    // const usuarios = await Usuario.find( { estado : true } )
+    //     .skip( Number( desde ) )
+    //     .limit( Number( limite ) );
+    // const total = await Usuario.countDocuments( { estado : true } );
+    const { desde = 0 , limite = 0 } = req.query;
+    const [ total , usuarios ] = await Promise.all( [
+        Usuario.countDocuments( { estado : true } ),
+        Usuario.find( { estado : true } )
+            .skip( Number( desde ) )
+            .limit( Number( limite ) )
+    ]);
+
     res.json({
-        msg: 'get API',
-        q,
-        nombre,
-        apikey
+        total,
+        usuarios
+        // resp
     });
 }
 
-const putUser = (req = request, res = response) => {
+const putUser = async(req = request, res = response) => {
     const id = req.params.id;
-    res.json({
-        msg: 'put API',
-        id
-    });
+    const { _id , password , google , correo , ...resto } = req.body;
+
+    //TODO: VALIDAR CONTRA BASE DE DATOS
+    if( password ){
+        //ENCRIPTAR LA CONTRASEÑA
+        const salt = bcryptjs.genSaltSync();
+        resto.password = bcryptjs.hashSync( password , salt );
+    }
+
+
+    const usuario = await Usuario.findByIdAndUpdate( id , resto );
+    res.json( usuario );
 }
 
-const postUser = (req = request, res = response) => {
-    const {nombre,edad} = req.body;
-    res.status(201).json({
-        ok : true,
-        msg: 'post API',
-        nombre,
-        edad
-    });
+const postUser = async(req = request, res = response) => {
+
+    const { nombre , correo , password , rol } = req.body;
+    const usuario = new Usuario( { nombre , correo , password , rol } );
+
+    //ENCRIPTAR LA CONTRASEÑA
+    const salt = bcryptjs.genSaltSync();
+    usuario.password = bcryptjs.hashSync( password , salt );
+
+
+    //GUARDAR EN BASE DE DATOS
+    await usuario.save();
+    res.json( usuario );
 }
 
-const deleteUser = (req = request, res = response) => {
-    res.json({
-        ok : true,
-        msg: 'delete API'
-    });
+const deleteUser = async(req = request, res = response) => {
+    const {id} = req.params;
+
+    const usuario = await Usuario.findByIdAndUpdate( id , { estado : false } );
+
+    res.json( usuario );
 }
 
 const patchUser = (req = request, res = response) => {

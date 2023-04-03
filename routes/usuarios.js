@@ -1,5 +1,5 @@
-
 const { Router } = require('express');
+const { check } = require('express-validator');
 
 const {
     getUser,
@@ -9,15 +9,38 @@ const {
     patchUser
 } = require('../controllers/usuarios');
 
+const { validarCampos } = require('../middlewares/validarCampos');
+const { existeRol, existeCorreo, existeUsuarioId } = require('../helpers/db-validators');
+
 const router = Router();
 
 router.get('/', getUser );
 
-router.put('/:id', putUser );
+router.put('/:id', [
+    check( 'id' , 'No es un id válido' ).isMongoId(),
+    check( 'id' ).custom( existeUsuarioId ),
+    validarCampos
+] , putUser );
 
-router.post('/', postUser );
+router.post('/',[
+    check( 'correo' , 'El correo no es válido' ).isEmail(),
+    check( 'correo').custom( existeCorreo ),
 
-router.delete('/', deleteUser );
+    check( 'nombre' , 'El  es obligatorio' ).not().isEmpty(),
+    check( 'password' , 'El password debe de ser de al menos 6 letras' ).isLength({min: 6}),
+    
+    check( 'rol' , 'El rol debe de ser string' ).isString(),
+    check( 'rol' ).custom( existeRol ),
+    validarCampos
+] , postUser );
+
+router.delete('/:id', [
+    check( 'id' , 'No es un id válido' ).isMongoId(),
+    check( 'id' ).custom( existeUsuarioId ),
+    // check( 'rol' , 'El rol debe de ser string' ).isString(),
+    // check( 'rol' ).custom( existeRol ),
+    validarCampos
+] , deleteUser );
 
 router.patch('/', patchUser );
 
