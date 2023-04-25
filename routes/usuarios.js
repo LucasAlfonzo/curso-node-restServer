@@ -9,7 +9,12 @@ const {
     patchUser
 } = require('../controllers/usuarios');
 
-const { validarCampos } = require('../middlewares/validarCampos');
+//VALIDACIONES MIDDLEWARE
+const { validarCampos , validarJWT , esAdminRol , tieneRol } = require('../middlewares/index');
+// const { validarCampos } = require('../middlewares/validarCampos');
+// const { validarJWT } = require('../middlewares/validarJWT');
+// const { esAdminRol, tieneRol } = require('../middlewares/validarRol');
+
 const { existeRol, existeCorreo, existeUsuarioId } = require('../helpers/db-validators');
 
 const router = Router();
@@ -35,6 +40,9 @@ router.post('/',[
 ] , postUser );
 
 router.delete('/:id', [
+    validarJWT,
+    esAdminRol,
+    // tieneRol('ADMIN_ROLE' , 'USER_ROLE' , 'CUALQUIER_ROLE'),
     check( 'id' , 'No es un id válido' ).isMongoId(),
     check( 'id' ).custom( existeUsuarioId ),
     // check( 'rol' , 'El rol debe de ser string' ).isString(),

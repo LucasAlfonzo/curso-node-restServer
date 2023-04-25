@@ -1,7 +1,6 @@
 const { request, response} = require('express');
 const Usuario = require('../models/modeloUsuario');
 const bcryptjs = require('bcryptjs');
-// const { validarCampos } = require('../middlewares/validarCampos');
 
 
 const getUser = async(req = request, res = response) => {
@@ -28,15 +27,12 @@ const getUser = async(req = request, res = response) => {
 const putUser = async(req = request, res = response) => {
     const id = req.params.id;
     const { _id , password , google , correo , ...resto } = req.body;
-
     //TODO: VALIDAR CONTRA BASE DE DATOS
     if( password ){
         //ENCRIPTAR LA CONTRASEÑA
         const salt = bcryptjs.genSaltSync();
         resto.password = bcryptjs.hashSync( password , salt );
     }
-
-
     const usuario = await Usuario.findByIdAndUpdate( id , resto );
     res.json( usuario );
 }
@@ -56,12 +52,18 @@ const postUser = async(req = request, res = response) => {
     res.json( usuario );
 }
 
-const deleteUser = async(req = request, res = response) => {
+const deleteUser = async(req = request, res = response ) => {
     const {id} = req.params;
-
+    const usuarioTest = await Usuario.findById(id);
+    //TODO VERIFICA SI EL USUARIO A ELIMINAR YA ESTÁ EN FALSO SU ESTADO
+    if( !usuarioTest.estado ){
+        return res.status(401).json({
+            msg : 'User already deleted'
+        });
+    }
     const usuario = await Usuario.findByIdAndUpdate( id , { estado : false } );
-
-    res.json( usuario );
+    usuario.estado = false;
+    return res.json(usuario);
 }
 
 const patchUser = (req = request, res = response) => {
